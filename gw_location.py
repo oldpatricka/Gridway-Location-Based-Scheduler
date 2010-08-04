@@ -259,11 +259,9 @@ class LocationScheduler:
         jorb = ""
         for job in self.jobs:
             jorb += str(job)
-            if job.has_key("JOB_STATE"): # and job["JOB_STATE"] == "pend":
+            if job.has_key("JOB_STATE") and job["JOB_STATE"] == "pend":
                 job_data = self._data_for_job(job["JOB_ID"])
 
-                out.write("Job data:" + str(job_data) + "\n")
-                out.flush()
                 if not job_data:
                     execute_site_names = self.hosts.keys()
                     execute_site = execute_site_names[0]
@@ -289,6 +287,8 @@ class LocationScheduler:
                     raise
                     reason = "%s isn't an available site" % execute_site
                     self._fail_scheduling_job(job["JOB_ID"], reason)
+        out.write(">SCHEDULE_END - SUCCESS -\n")
+        out.flush()
         sys.stdout.write("SCHEDULE_END - SUCCESS -\n")
         sys.stdout.flush()
         return jorb
@@ -310,8 +310,10 @@ class LocationScheduler:
         """
         _schedule_job_to -- print GW scheduling string to schedule a job
         """
-        sxout = open("/tmp/sxout.log", "a")
-        command = "SCHEDULE_JOB %s SUCCESS %s:default:100" % (job_id, site)
+        site_data = self.hosts[site]
+        queue = site_data['QUEUE_NAME[0]']
+        host_id = site_data['HOST_ID']
+        command = "SCHEDULE_JOB %s SUCCESS %s:%s:0" % (job_id, host_id, queue)
         sys.stdout.write(command + "\n")
         sys.stdout.flush()
         out.write(">" + command + "\n")
@@ -383,8 +385,6 @@ def main():
             out.flush()
         elif gw_command.startswith(GW_SCHEDULE_COMMAND):
             jorbs = scheduler.schedule()
-            out.write("JORBS"  + jorbs + "\n")
-            out.flush()
             
         elif gw_command.startswith(GW_FINALIZE_COMMAND):
             out.write(">"  + GW_FINALIZE_SUCCESS)
