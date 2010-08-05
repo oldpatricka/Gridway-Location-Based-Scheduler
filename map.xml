@@ -1,0 +1,12 @@
+<locationmap>
+	<!-- Change these example mappings -->
+	<mapping>
+		<datasite>data.eastcoast.ca</datasite>
+		<executionsite>cluster.halifax.ca</executionsite>
+	</mapping>
+	<mapping>
+		<datasite>data.westcoast.ca</datasite>
+		<executionsite>torque.vancouver.ca</executionsite>
+	</mapping>
+</locationmap>
+

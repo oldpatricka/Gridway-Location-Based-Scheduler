@@ -330,7 +330,7 @@ class LocationScheduler:
 
 
 def usage():
-    print >> sys.stderr, "usage: %s -m mapping_file" 
+    print >> sys.stderr, "usage: %s -m mapping_file" % sys.argv[0]
 
 GW_INIT_COMMAND = "INIT"
 GW_INIT_SUCCESS = "INIT - SUCCESS -\n"

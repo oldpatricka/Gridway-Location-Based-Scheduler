@@ -1,0 +1,5 @@
+<blacklist>
+  <!-- change these example blacklisted sites -->
+  <site>cluster.badsite.ca</site>
+  <site>cluster.slowsite.ca</site>
+</blacklist>

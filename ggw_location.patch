@@ -1,0 +1,18 @@
+--- /usr/local/globus-4.0.8/lib/perl/Globus/GRAM/JobManager/gw.pm	2010-08-05 11:51:24.000000000 -0700
++++ gw.pm	2010-08-05 11:58:45.000000000 -0700
+@@ -202,6 +202,15 @@
+            print JOB $tuple->[0], '=', $tuple->[1], ", ";
+         }
+     }
++    ### Add custom location environment for location scheduler
++    $ext = $description->extensions();
++    if(defined($ext) and $ext =~ m/(<data>.*<\/data>)/ms)
++    {
++        $data = $1;
++        $data =~ s/\s//g;
++
++        print JOB 'DATA="' . $data . '"';
++    }
+     print JOB "\n";
+ 
+     if ((defined($description->stdin())) && ($description->stdin() ne "/dev/null"))
