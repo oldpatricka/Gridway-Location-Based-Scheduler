@@ -5,10 +5,19 @@ import os
 import re
 import sys
 import time
+import logging
 from subprocess import Popen, PIPE
 from xml.dom import minidom
 
-out = open("/tmp/gw.out", "a")
+# Init logging
+try:
+    LOG_FILE = os.environ['GW_LOCATION'] + "/var/location.log"
+    logging.basicConfig(filename=LOG_FILE,level=logging.DEBUG)
+except:
+    print >> sys.stderr, "GW_LOCATION isn't defined"
+    sys.exit(1)
+
+
 
 class LocationScheduler:
 
@@ -287,10 +296,7 @@ class LocationScheduler:
                     raise
                     reason = "%s isn't an available site" % execute_site
                     self._fail_scheduling_job(job["JOB_ID"], reason)
-        out.write(">SCHEDULE_END - SUCCESS -\n")
-        out.flush()
-        sys.stdout.write("SCHEDULE_END - SUCCESS -\n")
-        sys.stdout.flush()
+        gw_message("SCHEDULE_END - SUCCESS -\n")
         return jorb
 
     def _dumb_schedule(self, job):
@@ -313,27 +319,24 @@ class LocationScheduler:
         site_data = self.hosts[site]
         queue = site_data['QUEUE_NAME[0]']
         host_id = site_data['HOST_ID']
-        command = "SCHEDULE_JOB %s SUCCESS %s:%s:0" % (job_id, host_id, queue)
-        sys.stdout.write(command + "\n")
-        sys.stdout.flush()
-        out.write(">" + command + "\n")
-        out.flush()
+        command = "SCHEDULE_JOB %s SUCCESS %s:%s:0\n" % (job_id, host_id, queue)
+        gw_message(command)
 
     def _fail_scheduling_job(self, job_id, reason=""):
         """
         _fail_scheduling_job -- print GW scheduling failure string
         """
-        print "SCHEDULE_JOB %s FAILURE %s" % (job_id, reason)
+        gw_message("SCHEDULE_JOB %s FAILURE %s\n" % (job_id, reason))
 
 
 def usage():
     print >> sys.stderr, "usage: %s -m mapping_file" 
 
 GW_INIT_COMMAND = "INIT"
-GW_INIT_SUCCESS = "INIT - SUCCESS -"
+GW_INIT_SUCCESS = "INIT - SUCCESS -\n"
 GW_SCHEDULE_COMMAND = "SCHEDULE - - - - -"
 GW_FINALIZE_COMMAND = "FINALIZE"
-GW_FINALIZE_SUCCESS = "FINALIZE - SUCCESS -"
+GW_FINALIZE_SUCCESS = "FINALIZE - SUCCESS -\n"
 
 def main():
 
@@ -359,13 +362,12 @@ def main():
                 usage()
                 sys.exit(1)
 
-    out.write("Sched started (%s)\n" % os.getpid())
+    logging.info("Location scheduler started (%s)\n" % os.getpid())
 
     try:
         scheduler = LocationScheduler(mapping_file, blacklist_file=blacklist_file)
     except Exception, e:
-        out.write(str(e))
-        out.write("Trying with no blacklist\n")
+        logging.warning("Blacklist file not found, trying without it\n")
         try:
             scheduler = LocationScheduler(mapping_file)
         except Exception, e:
@@ -375,27 +377,24 @@ def main():
 
     while True:
         gw_command = raw_input()
-        out.write("<")
-        out.write(gw_command + "\n")
-        out.flush()
+        logging.debug("Got message: '%s'" % gw_command.replace('\n', '\\n'))
         if gw_command.startswith(GW_INIT_COMMAND):
-            sys.stdout.write(GW_INIT_SUCCESS + "\n")
-            sys.stdout.flush()
-            out.write(">"  + GW_INIT_SUCCESS + "\n")
-            out.flush()
+            gw_message(GW_INIT_SUCCESS)
         elif gw_command.startswith(GW_SCHEDULE_COMMAND):
             jorbs = scheduler.schedule()
             
         elif gw_command.startswith(GW_FINALIZE_COMMAND):
-            out.write(">"  + GW_FINALIZE_SUCCESS)
-            out.flush()
-            out.close
-            sys.stdout.write(GW_FINALIZE_SUCCESS)
-            sys.stdout.flush()
+            gw_message(GW_FINALIZE_SUCCESS)
             sys.exit(0)
 
-    out.close
-
+def gw_message(command):
+    """
+    gw_message -- tell gridway to do something
+    """
+    import sys
+    sys.stdout.write(command)
+    sys.stdout.flush()
+    logging.debug("Sent message: '%s'" % command.replace('\n', '\\n'))
 
 if __name__ == "__main__":
     main()
